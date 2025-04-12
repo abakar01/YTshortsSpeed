@@ -12,3 +12,7 @@ Enable Developer mode in the top-right corner.
 Click on Load unpacked and select the folder with the extension files.
 
 Enjoy customizing your playback speed on YouTube Shorts!
+
+
+P.S. if the speed menu is not displayed, reload the page
+P.S.S This was created by artificial intelligence; I don't understand programming at all.
