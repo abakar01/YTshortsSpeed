@@ -1,12 +1,15 @@
-// Глобальная переменная для сохранения выбранной скорости
-let savedSpeed = 1;
+// Глобальная переменная для сохранения скорости
+let savedSpeed = parseFloat(localStorage.getItem('savedSpeed')) || 1;
 
-// Функция для создания и добавления контроллера скорости
-function addSpeedControl(videoElement) {
-  // Проверяем, чтобы контроллер не добавлялся повторно
-  if (document.getElementById('speed-selector')) return;
+// Функция для установки скорости видео
+function applySpeed(videoElement) {
+  if (videoElement) {
+    videoElement.playbackRate = savedSpeed; // Применяем сохранённую скорость
+  }
+}
 
-  // Создаем контейнер для контроллера скорости
+// Функция для создания меню скорости
+function createSpeedControl() {
   const speedControl = document.createElement('div');
   speedControl.innerHTML = `
     <select id="speed-selector">
@@ -19,6 +22,8 @@ function addSpeedControl(videoElement) {
       <option value="1.5">1.5x</option>
       <option value="1.75">1.75x</option>
       <option value="2">2x</option>
+	  <option value="2.15">2.15x</option>
+	  <option value="2.25">2.25x</option>
       <option value="2.35">2.35x</option>
       <option value="2.5">2.5x</option>
       <option value="2.75">2.75x</option>
@@ -26,8 +31,8 @@ function addSpeedControl(videoElement) {
     </select>
   `;
 
-  // Стилизация в стиле YouTube
-  speedControl.style.position = 'fixed';
+  // Стилизация меню
+  speedControl.style.position = 'absolute';
   speedControl.style.zIndex = '10000';
   speedControl.style.backgroundColor = '#f9f9f9';
   speedControl.style.border = '1px solid #ddd';
@@ -38,43 +43,74 @@ function addSpeedControl(videoElement) {
   speedControl.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
   speedControl.style.color = '#333';
 
-  // Динамическое вычисление позиции
-  const videoBounds = videoElement.getBoundingClientRect();
-  speedControl.style.top = `${videoBounds.top + videoBounds.height / 2}px`;
-  speedControl.style.left = `${videoBounds.right + 10}px`;
-
-  document.body.appendChild(speedControl); // Добавляем контроллер к `body`
-
-  const selector = document.getElementById('speed-selector');
-  selector.value = savedSpeed; // Устанавливаем сохранённое значение скорости
-  selector.addEventListener('change', (event) => {
-    savedSpeed = parseFloat(event.target.value); // Сохраняем выбранную скорость
-    videoElement.playbackRate = savedSpeed; // Применяем скорость к текущему видео
-  });
-
-  videoElement.playbackRate = savedSpeed; // Применяем сохранённую скорость при создании меню
+  return speedControl;
 }
 
-// Наблюдение за изменениями DOM с проверкой URL
-const observer = new MutationObserver(() => {
+// Функция для добавления контроллера скорости
+function addSpeedControl(videoElement) {
+  const existingControl = document.getElementById('speed-selector');
+  if (existingControl) return; // Если меню уже существует, не добавляем заново
+
+  const speedControl = createSpeedControl();
+
+  // Расчет позиции меню
+  const updatePosition = () => {
+    const videoBounds = videoElement.getBoundingClientRect();
+    speedControl.style.top = `${window.scrollY + videoBounds.top + videoBounds.height / 2 - 20}px`;
+    speedControl.style.left = `${window.scrollX + videoBounds.right + 10}px`;
+  };
+
+  updatePosition(); // Устанавливаем позицию
+  window.addEventListener('resize', updatePosition);
+  window.addEventListener('scroll', updatePosition);
+
+  document.body.appendChild(speedControl);
+
+  // Обработчик изменения скорости
+  const selector = document.getElementById('speed-selector');
+  selector.value = savedSpeed;
+  selector.addEventListener('change', (event) => {
+    savedSpeed = parseFloat(event.target.value);
+    localStorage.setItem('savedSpeed', savedSpeed);
+    applySpeed(videoElement); // Применяем выбранную скорость
+  });
+
+  applySpeed(videoElement); // Применяем сохранённую скорость
+}
+
+// Функция для обработки нового видео
+function handleNewVideo() {
   const videoElement = document.querySelector('video');
-  
-  // Проверяем, что мы находимся в разделе YouTube Shorts
+
   if (window.location.pathname.startsWith('/shorts') && videoElement) {
-    if (!document.getElementById('speed-selector')) {
-      addSpeedControl(videoElement); // Добавляем контрол скорости
-    }
-    videoElement.playbackRate = savedSpeed; // Применяем сохранённую скорость
-  } else {
-    // Удаляем меню, если не на Shorts
-    const existingControl = document.getElementById('speed-selector');
-    if (existingControl) {
-      existingControl.parentElement.remove(); // Убираем элемент меню
-    }
+    addSpeedControl(videoElement); // Создаём контроллер скорости
+    applySpeed(videoElement); // Применяем сохранённую скорость
   }
+}
+
+// Основной код
+window.addEventListener('load', () => {
+  handleNewVideo(); // Проверяем видео при загрузке страницы
+
+  const observer = new MutationObserver((mutationsList) => {
+    for (const mutation of mutationsList) {
+      if (mutation.addedNodes.length > 0) {
+        handleNewVideo(); // Проверяем каждое добавление нового узла
+      }
+    }
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
 });
 
-// Настройка наблюдения только для основного контейнера YouTube
-window.addEventListener('load', () => {
-  observer.observe(document.querySelector('ytd-app'), { childList: true, subtree: true });
+// Обработчик изменения URL
+window.addEventListener('popstate', () => {
+  handleNewVideo();
 });
+
+// Перехват pushState
+const originalPushState = history.pushState;
+history.pushState = function (...args) {
+  originalPushState.apply(this, args);
+  handleNewVideo();
+};
