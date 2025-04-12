@@ -1,13 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Shorts Speed Controller",
+  "name": "Speed Control for Shorts",
+  "description": "Расширение для управления скоростью видеороликов YouTube Shorts.",
   "version": "1.0",
-  "description": "Позволяет менять скорость воспроизведения YouTube Shorts.",
-  "permissions": ["activeTab"],
+  "permissions": [
+    "storage"
+  ],
   "content_scripts": [
     {
-      "matches": ["https://www.youtube.com/*"],
-      "js": ["content.js"]
+      "matches": [
+        "https://*.youtube.com/shorts/*"
+      ],
+      "js": [
+        "speed-control.js"
+      ],
+      "run_at": "document_end"
     }
   ]
 }
