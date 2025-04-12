@@ -69,7 +69,7 @@
     panel.style.flexDirection = "column";
 
     // Обновлённый список вариантов скоростей
-    const speeds = [1, 1.35, 1.5, 1.75, 2.0, 2.15, 2.25, 2.35, 2.5, 2.75, 3];
+    const speeds = [0.1, 0.35, 0.5, 0.75, 1, 1.35, 1.5, 1.75, 2.0, 2.15, 2.25, 2.35, 2.5, 2.75, 3];
     speeds.forEach(function (speed) {
       const speedOption = document.createElement("div");
       speedOption.textContent = speed + "x";
